@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.alex.clip-pipeline.listener</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/agt11/clip-pipeline/venv/bin/python</string>
+        <string>/Users/agt11/clip-pipeline/src/listener.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/agt11/clip-pipeline</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/agt11/clip-pipeline/data/listener.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/agt11/clip-pipeline/data/listener.log</string>
+</dict>
+</plist>

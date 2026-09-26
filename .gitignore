@@ -1,0 +1,14 @@
+.env
+venv/
+vendor/
+data/sources/
+data/work/
+data/pending/
+data/posted/
+data/rejected/
+data/*.log
+data/telegram_offset.txt
+youtube_client_secret.json
+youtube_token.json*
+__pycache__/
+*.pyc

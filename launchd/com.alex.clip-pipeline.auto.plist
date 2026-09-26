@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.alex.clip-pipeline.auto</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/agt11/clip-pipeline/venv/bin/python</string>
+        <string>/Users/agt11/clip-pipeline/src/pipeline.py</string>
+        <string>auto</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/agt11/clip-pipeline</string>
+    <!-- Twice a day. Each run clips ONE source video into up to 5 clips, which keeps the
+         day's output under YouTube's 6-uploads-per-day API quota. -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
+        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>30</integer></dict>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/Users/agt11/clip-pipeline/data/auto.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/agt11/clip-pipeline/data/auto.log</string>
+</dict>
+</plist>

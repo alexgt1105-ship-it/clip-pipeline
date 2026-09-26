@@ -1,0 +1,11 @@
+anthropic>=1.0.0
+requests>=2.31.0
+imageio-ffmpeg>=0.5.1
+python-dotenv>=1.0.0
+google-auth-oauthlib>=1.2.0
+google-api-python-client>=2.100.0
+
+# Installed from master, not PyPI: YouTube breaks older builds every few months and the
+# PyPI release lags. scripts/update-ytdlp.sh refreshes it. Needs Python 3.10+, which is
+# why this project runs on a uv-managed 3.12 rather than the system 3.9.
+yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.tar.gz
