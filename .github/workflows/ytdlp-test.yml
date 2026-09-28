@@ -1,0 +1,16 @@
+name: ytdlp-test
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -q "yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.tar.gz"
+      - name: download
+        run: |
+          yt-dlp -f "bv*[height<=1080]+ba/b" -o "v.%(ext)s" "https://www.youtube.com/watch?v=aircAruvnKk" 2>&1 | tail -5
+          ls -la v.* && echo DOWNLOAD_OK
+      - name: captions
+        run: yt-dlp --skip-download --write-auto-subs --sub-langs en -o c "https://www.youtube.com/watch?v=aircAruvnKk" 2>&1 | tail -3; ls c.* && echo SUBS_OK
