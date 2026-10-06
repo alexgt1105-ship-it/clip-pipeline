@@ -6,7 +6,7 @@ import time
 
 import yt_dlp
 
-from config import WATCHLIST_PATH
+from config import WATCHLIST_PATH, YTDLP_AUTH
 
 DEFAULTS = {
     "status": "queued",
@@ -108,6 +108,7 @@ def _list_one(url: str, limit: int) -> list[dict]:
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
+        **YTDLP_AUTH,
     }
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:

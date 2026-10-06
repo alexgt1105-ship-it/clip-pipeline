@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yt_dlp
 
-from config import SOURCES_DIR
+from config import SOURCES_DIR, YTDLP_AUTH
 
 LANGS = ["en", "en-orig", "en-US", "en-GB"]
 
@@ -119,6 +119,7 @@ def _download(url: str, work: Path, auto_only: bool) -> dict | None:
         "quiet": True,
         "no_warnings": True,
         "noprogress": True,
+        **YTDLP_AUTH,
     }
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:

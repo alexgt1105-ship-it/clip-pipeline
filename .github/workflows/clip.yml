@@ -28,6 +28,8 @@ jobs:
       YOUTUBE_PRIVACY_STATUS: ${{ vars.YOUTUBE_PRIVACY_STATUS || 'private' }}
       # The apt ffmpeg has libass + fontconfig, which the burned-in captions need.
       IMAGEIO_FFMPEG_EXE: /usr/bin/ffmpeg
+      # Burner-account YouTube cookies; runners are bot-blocked without them.
+      COOKIES_FILE: cookies.txt
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,6 +41,7 @@ jobs:
         id: setup
         env:
           YT_TOKEN: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          YT_COOKIES: ${{ secrets.YTDLP_COOKIES }}
         run: |
           echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
           sudo apt-get update -qq >/dev/null
@@ -46,6 +49,7 @@ jobs:
           pip install -q -r requirements.txt
           python scripts/state_crypt.py unpack
           printf '%s' "$YT_TOKEN" > youtube_token.json
+          printf '%s' "$YT_COOKIES" > cookies.txt
 
       # Clips waiting for a tap are carried run to run in the cache, encrypted like state.
       - uses: actions/cache/restore@v4

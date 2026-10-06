@@ -8,7 +8,7 @@ from pathlib import Path
 import yt_dlp
 
 import ffmpeg_util
-from config import COOKIES_FROM_BROWSER, SOURCES_DIR
+from config import SOURCES_DIR, YTDLP_AUTH
 
 # YouTube gates some videos behind a player client that the default extraction path
 # cannot use. Each fallback trades quality for reach — android in particular often
@@ -50,7 +50,7 @@ def fetch(url: str, force: bool = False) -> tuple[Path, dict]:
     X posts — so the pipeline is not tied to one channel or one kind of stream.
     Re-running with the same URL reuses the existing download instead of re-fetching.
     """
-    probe_opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+    probe_opts = {"quiet": True, "no_warnings": True, "skip_download": True, **YTDLP_AUTH}
     with yt_dlp.YoutubeDL(probe_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
@@ -109,8 +109,7 @@ def _download_with_fallback(url: str, base_opts: dict) -> None:
         opts = dict(base_opts)
         if client:
             opts["extractor_args"] = {"youtube": {"player_client": [client]}}
-        if COOKIES_FROM_BROWSER:
-            opts["cookiesfrombrowser"] = (COOKIES_FROM_BROWSER,)
+        opts.update(YTDLP_AUTH)
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 ydl.download([url])

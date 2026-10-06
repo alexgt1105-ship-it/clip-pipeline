@@ -50,6 +50,19 @@ DEFAULT_LAYOUT = os.environ.get("DEFAULT_LAYOUT", "blur")
 # account, so leave it empty unless you actually need it.
 COOKIES_FROM_BROWSER = os.environ.get("COOKIES_FROM_BROWSER", "").strip() or None
 
+# A Netscape cookies.txt from a THROWAWAY Google account. GitHub runners sit on datacenter
+# IPs that YouTube bot-blocks ("Sign in to confirm you're not a bot") unless the request
+# carries a signed-in session. Never export the clipping channel's or a personal account.
+COOKIES_FILE = os.environ.get("COOKIES_FILE", "").strip() or None
+
+# Merged into every yt-dlp call: listing, caption fetch, probe and download all hit the
+# same bot check, not just the download.
+YTDLP_AUTH: dict = {}
+if COOKIES_FILE and Path(COOKIES_FILE).exists():
+    YTDLP_AUTH["cookiefile"] = COOKIES_FILE
+elif COOKIES_FROM_BROWSER:
+    YTDLP_AUTH["cookiesfrombrowser"] = (COOKIES_FROM_BROWSER,)
+
 # A source video runs 100-500 MB and is dead weight once its clips are rendered — the
 # transcript beside it is what future re-cuts actually need, and that is kilobytes.
 # Set KEEP_SOURCES=1 to keep them if you want to re-cut without re-downloading.
