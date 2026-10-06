@@ -20,4 +20,10 @@ for line in text.splitlines():
     cookies += 1
 open("cookies.txt", "w").write("\n".join(out) + "\n")
 print(f"cookies.txt: {cookies} cookie(s)")
+if not cookies:
+    # Shape only, never content, so a bad paste can be diagnosed from the public log.
+    lines = text.splitlines()
+    print(f"secret: {len(text)} chars, {len(lines)} lines, {text.count(chr(9))} tabs, "
+          f"mentions youtube.com: {'youtube.com' in text}, "
+          f"fields per line: {sorted({len(l.split()) for l in lines if l.strip()})[:10]}")
 sys.exit(0 if cookies else 1)
