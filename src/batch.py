@@ -56,6 +56,8 @@ def main() -> int:
     #    scheduled auto, so it only counts once.
     if os.environ.get("SKIP_AUTO") != "1" and ["auto"] not in queue:
         queue.insert(0, ["auto"])
+    if os.environ.get("CLIP_URL"):
+        queue.append(["clip", os.environ["CLIP_URL"]])
 
     jobs = 0
     deadline = time.time()

@@ -6,6 +6,10 @@ on:
     - cron: '30 15 * * *'
     - cron: '30 1 * * *'
   workflow_dispatch:
+    inputs:
+      url:
+        description: 'Clip this one URL in this run (shows on the public run page; use Telegram for private ones)'
+        required: false
 
 # Runs share state.enc and the pending clips; two at once would clobber each other.
 concurrency:
@@ -28,6 +32,7 @@ jobs:
       YOUTUBE_PRIVACY_STATUS: ${{ vars.YOUTUBE_PRIVACY_STATUS || 'private' }}
       # The apt ffmpeg has libass + fontconfig, which the burned-in captions need.
       IMAGEIO_FFMPEG_EXE: /usr/bin/ffmpeg
+      CLIP_URL: ${{ inputs.url }}
       # Burner-account YouTube cookies; runners are bot-blocked without them.
       COOKIES_FILE: cookies.txt
     steps:
