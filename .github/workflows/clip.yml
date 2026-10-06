@@ -49,7 +49,7 @@ jobs:
           pip install -q -r requirements.txt
           python scripts/state_crypt.py unpack
           printf '%s' "$YT_TOKEN" > youtube_token.json
-          printf '%s' "$YT_COOKIES" > cookies.txt
+          python scripts/write_cookies.py
 
       # Clips waiting for a tap are carried run to run in the cache, encrypted like state.
       - uses: actions/cache/restore@v4

@@ -5,6 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - uses: denoland/setup-deno@v2
@@ -12,7 +13,7 @@ jobs:
       - run: pip install -q yt-dlp-ejs "yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.tar.gz"
       - name: cookies
         env: { YT_COOKIES: "${{ secrets.YTDLP_COOKIES }}" }
-        run: printf '%s' "$YT_COOKIES" > cookies.txt && wc -l < cookies.txt
+        run: python scripts/write_cookies.py
       - name: download
         run: |
           yt-dlp --cookies cookies.txt -f "bv*[height<=1080]+ba/b" -o "v.%(ext)s" "https://www.youtube.com/watch?v=aircAruvnKk" 2>&1 | tail -5
