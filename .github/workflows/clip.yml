@@ -1,0 +1,102 @@
+name: run
+on:
+  schedule:
+    # 08:30 and 18:30 Pacific (PDT). Up to 5 clips a run keeps posting under YouTube's
+    # 6-uploads-a-day API quota.
+    - cron: '30 15 * * *'
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+# Runs share state.enc and the pending clips; two at once would clobber each other.
+concurrency:
+  group: run
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      STATE_KEY: ${{ secrets.STATE_KEY }}
+      YOUTUBE_PRIVACY_STATUS: ${{ vars.YOUTUBE_PRIVACY_STATUS || 'private' }}
+      # The apt ffmpeg has libass + fontconfig, which the burned-in captions need.
+      IMAGEIO_FFMPEG_EXE: /usr/bin/ffmpeg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12', cache: pip }
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+
+      - name: setup
+        id: setup
+        env:
+          YT_TOKEN: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+        run: |
+          echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
+          sudo apt-get update -qq >/dev/null
+          sudo apt-get install -y -qq ffmpeg ttf-mscorefonts-installer >/dev/null 2>&1
+          pip install -q -r requirements.txt
+          python scripts/state_crypt.py unpack
+          printf '%s' "$YT_TOKEN" > youtube_token.json
+
+      # Clips waiting for a tap are carried run to run in the cache, encrypted like state.
+      - uses: actions/cache/restore@v4
+        with:
+          path: pending.enc
+          key: pending-${{ github.run_id }}
+          restore-keys: pending-
+      - name: restore pending
+        id: pending
+        run: |
+          mkdir -p data/pending
+          if [ -f pending.enc ]; then
+            openssl enc -d -aes-256-cbc -md sha256 -pbkdf2 -iter 200000 -pass env:STATE_KEY -in pending.enc | tar -xz -C data/pending
+          fi
+
+      # Output goes to a file, not this page: the repo is public and the log would name
+      # every contract and source. Failures are sent to Telegram instead.
+      - name: run
+        id: run
+        run: |
+          if python src/batch.py > run.log 2>&1; then
+            echo ok=1 >> "$GITHUB_OUTPUT"
+          else
+            echo ok=0 >> "$GITHUB_OUTPUT"
+            tail -c 3500 run.log | curl -s -o /dev/null "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text@-"
+          fi
+
+      # Only written back if they were read in first; otherwise a failed setup would
+      # replace real state with an empty one.
+      - name: save pending
+        if: always() && steps.pending.outcome == 'success'
+        run: |
+          tar -cz -C data/pending . | openssl enc -aes-256-cbc -md sha256 -pbkdf2 -iter 200000 -salt -pass env:STATE_KEY -out pending.enc
+      - uses: actions/cache/save@v4
+        if: always() && steps.pending.outcome == 'success'
+        with:
+          path: pending.enc
+          key: pending-${{ github.run_id }}
+
+      - name: save state
+        if: always() && steps.setup.outcome == 'success'
+        run: |
+          python scripts/state_crypt.py pack
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add state.enc
+          if ! git diff --cached --quiet; then
+            git commit -q -m "update"
+            git pull -q --rebase && git push -q
+          fi
+
+      - if: steps.run.outputs.ok != '1'
+        run: exit 1

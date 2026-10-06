@@ -9,3 +9,8 @@ google-api-python-client>=2.100.0
 # PyPI release lags. scripts/update-ytdlp.sh refreshes it. Needs Python 3.10+, which is
 # why this project runs on a uv-managed 3.12 rather than the system 3.9.
 yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.tar.gz
+
+# YouTube now serves a JavaScript challenge; yt-dlp solves it with these scripts plus a JS
+# runtime (deno on the GitHub runner). Without them it falls back to clients that often
+# cap out at 360p or get refused.
+yt-dlp-ejs

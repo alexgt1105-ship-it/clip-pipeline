@@ -81,6 +81,34 @@ Then hand it to launchd so nothing needs starting by hand:
 
 That keeps the listener alive permanently and fires `auto` at 08:30 and 18:30.
 
+## Running it on GitHub Actions (no Mac needed)
+
+`.github/workflows/clip.yml` runs at 08:30 and 18:30 Pacific, or on demand from the Actions
+tab. Each run is `src/batch.py`: handle the taps and commands that came in since the last
+run, clip one source from the active contract, stay on Telegram 10 minutes so the new
+clips can be tapped right away, then exit. A tap after that waits in Telegram until the
+next run picks it up.
+
+The repo is public for free unlimited minutes, so nothing about the contracts shows:
+
+- `state.enc` holds the watchlist, clip log and Telegram offset, AES-256 under `STATE_KEY`.
+  `scripts/state_crypt.py unpack` / `pack` open and close it.
+- Clips waiting for a tap ride between runs in the Actions cache as `pending.enc`, under
+  the same key.
+- The run's output goes to a file, not the public log page. If a run fails, the tail of
+  that file is sent to you on Telegram.
+- Commits are all named `update`.
+
+Repo secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_CHAT_ID`, `STATE_KEY` (all from `.env`), and `YOUTUBE_TOKEN_JSON` (the contents
+of `youtube_token.json`). Set the repo variable `YOUTUBE_PRIVACY_STATUS=public` once the
+uploads look right; it defaults to private.
+
+Only the owner's chat (`TELEGRAM_CHAT_ID`) can command the bot. Anyone else is ignored.
+
+Don't run the Mac listener and the GitHub runs together. They share one bot and would take
+each other's taps.
+
 ## How contracts advance on their own
 
 A contract is an entry in `data/watchlist.json`: a name, one or more source URLs, and
@@ -148,6 +176,7 @@ Plus **Post it** / **Skip** buttons under every clip.
 src/
   pipeline.py      orchestrator + CLI
   listener.py      Telegram daemon: button taps and commands
+  batch.py         one run for GitHub Actions: taps, one source, listen, exit
   campaigns.py     contracts, and the auto-advance when one ends
   ingest.py        yt-dlp download / local file adoption
   subs.py          free word-timed transcript from the source's own captions

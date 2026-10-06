@@ -12,7 +12,7 @@ import campaigns
 import state
 import telegram
 import upload
-from config import DATA, POSTED_DIR, REJECTED_DIR, ROOT
+from config import TELEGRAM_CHAT_ID, DATA, PENDING_DIR, POSTED_DIR, REJECTED_DIR, ROOT
 
 OFFSET_PATH = DATA / "telegram_offset.txt"
 PYTHON = ROOT / "venv" / "bin" / "python"
@@ -70,7 +70,9 @@ def _handle_callback(update: dict) -> None:
         telegram.answer_callback(query["id"], f"Already {clip['status']}")
         return
 
-    path = Path(clip["path"])
+    # Look the file up by name: clips.json travels between machines (the Mac, then
+    # GitHub runners), so the absolute path it was written with may not exist here.
+    path = PENDING_DIR / Path(clip["path"]).name
 
     if action == "reject":
         if path.exists():
@@ -106,7 +108,10 @@ def _handle_callback(update: dict) -> None:
     )
 
 
-def _handle_message(update: dict) -> None:
+def _handle_message(update: dict, run=None) -> None:
+    """`run` takes pipeline args (["auto"], ["clip", url]). The always-on listener spawns
+    them as a child process; batch.py queues them and works through them itself."""
+    run = run or _spawn
     text = (update["message"].get("text") or "").strip()
     if not text:
         return
@@ -160,15 +165,35 @@ def _handle_message(update: dict) -> None:
         )
 
     elif text.startswith("/run"):
-        _spawn(["auto"])
+        run(["auto"])
         telegram.send_message("Running the next source now. Clips arrive here when ready.")
 
     elif text.startswith("/help") or text.startswith("/start"):
         telegram.send_message(HELP)
 
     elif re.match(r"^https?://\S+$", text):
-        _spawn(["clip", text])
+        run(["clip", text])
         telegram.send_message("Clipping that now. Results land here shortly.")
+
+
+def _chat_id(update: dict) -> str:
+    if "callback_query" in update:
+        return str(update["callback_query"]["message"]["chat"]["id"])
+    return str((update.get("message") or {}).get("chat", {}).get("id", ""))
+
+
+def dispatch(update: dict, run=None) -> None:
+    # The bot's username is findable by anyone, and every command here spends money or
+    # posts to the channel, so only the owner's chat is listened to.
+    if _chat_id(update) != str(TELEGRAM_CHAT_ID):
+        return
+    try:
+        if "callback_query" in update:
+            _handle_callback(update)
+        elif "message" in update:
+            _handle_message(update, run)
+    except Exception:
+        print(f"[listener] update failed:\n{traceback.format_exc()}")
 
 
 def main() -> None:
@@ -185,13 +210,7 @@ def main() -> None:
         for update in updates:
             offset = update["update_id"] + 1
             _save_offset(offset)
-            try:
-                if "callback_query" in update:
-                    _handle_callback(update)
-                elif "message" in update:
-                    _handle_message(update)
-            except Exception:
-                print(f"[listener] update failed:\n{traceback.format_exc()}")
+            dispatch(update)
 
 
 if __name__ == "__main__":

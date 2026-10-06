@@ -7,7 +7,9 @@ jobs:
     steps:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install -q "yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.tar.gz"
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      - run: pip install -q yt-dlp-ejs "yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.tar.gz"
       - name: download
         run: |
           yt-dlp -f "bv*[height<=1080]+ba/b" -o "v.%(ext)s" "https://www.youtube.com/watch?v=aircAruvnKk" 2>&1 | tail -5
